@@ -1,5 +1,5 @@
 """
-Pure business logic for API payload size analysis and compression estimation.
+Pure business logic for API payload size analysis, compression estimation, and performance profiling.
 Zero Streamlit or UI dependencies.
 """
 
@@ -9,7 +9,7 @@ from typing import Dict, Any
 
 def analyze_payload_compression(payload: str) -> Dict[str, Any]:
     """Analyzes raw payload size and computes gzip compressed size and transfer metrics."""
-    raw_bytes = payload.encode("utf-8")
+    raw_bytes = (payload or "").encode("utf-8")
     raw_size = len(raw_bytes)
 
     if raw_size == 0:
@@ -39,4 +39,27 @@ def analyze_payload_compression(payload: str) -> Dict[str, Any]:
         "bytes_saved": max(0, savings),
         "latency_estimate_3g_ms": transfer_3g_ms,
         "latency_estimate_5g_ms": transfer_5g_ms,
+    }
+
+
+def calculate_throughput_metrics(
+    total_requests: int,
+    duration_seconds: float,
+    avg_payload_bytes: int = 1024,
+) -> Dict[str, Any]:
+    """Calculates Requests Per Second (RPS) and bandwidth consumption."""
+    if duration_seconds <= 0:
+        return {"rps": 0.0, "total_mb": 0.0, "bandwidth_mbps": 0.0}
+
+    rps = round(total_requests / duration_seconds, 2)
+    total_bytes = total_requests * avg_payload_bytes
+    total_mb = round(total_bytes / (1024 * 1024), 3)
+    bandwidth_mbps = round((total_bytes * 8) / (duration_seconds * 1_000_000), 2)
+
+    return {
+        "rps": rps,
+        "total_requests": total_requests,
+        "duration_seconds": duration_seconds,
+        "total_mb": total_mb,
+        "bandwidth_mbps": bandwidth_mbps,
     }
